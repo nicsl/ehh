@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Urinary Output Measurement Gateway</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h1 align="center">Urinary Output Measurement Gateway</h1>       
+            <div class="row">
+                <div class="col-md-6">
+                    <label>Select Room</label>
+                    <select name="room" data-live-search="true" id="room" class="form-control" title="Select Room"> 
+                    {% for room in rooms %}
+                    <option value="{{room}}">{{room}}</option>
+                    {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label>Select Patient</label>
+                    <select name="patient" data-live-search="true" id="patient" class="form-control" title="Select Patient"> </select>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                $("#room").selectpicker();
+   
+                $("#patient").selectpicker();
+   
+                function load_data(type, roomId) {
+                    $.ajax({
+                        url: "/patientsInRoom",
+                        method: "POST",
+                        data: { type: type, roomId: roomId },
+                        dataType: "json",
+                        success: function (data) { //alert(roomId)
+                            var html = "";
+                            for (var count = 0; count < data.length; count++) {
+                                html += '<option value="' + data[count].id + '">' + data[count].id + "</option>";
+                            }
+							$("#patient").html(html);
+							$("#patient").selectpicker("refresh");
+                        },
+                    });
+                }
+   
+                $(document).on("change", "#room", function () {
+                    var roomId = $("#room").val();
+                    load_data("patients", roomId);
+                });
+            });
+        </script>
+    </body>
+</html>
