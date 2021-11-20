@@ -11,7 +11,7 @@ import json
 app = Flask(__name__)
 
 room_1 = [1, 1431, 1516, 1970, 2177]
-room_2 = [2395, 2592, 2871, 3021, 3422]
+room_2 = [2395, 2592, 2871, 3021, 3294]
 
 rooms = [0, 1]
 patients = [room_1, room_2]
@@ -31,6 +31,31 @@ def patient():
         patientId = patientId
     )
 
+@app.route("/measurement", methods=["POST"])
+def getMeasurement():
+    data = request.data
+    print("Web server data: ", request.json)
+    value = request.json['value']
+    timestamp = request.json['time']
+    patientId = request.json['patientId']
+
+    jsonData = {"resourceType":"Observation","subject":
+                {"reference":("Patient/"+str(patientId))},
+                "effectiveDateTime":str(timestamp),
+                "valueQuantity":{"value":value,"system":"http://unitsofmeasure.org","code":"g","unit":"g"},
+                "status":"final",
+                "code":{"coding":[{"system":"urn:my-system","code": "urinary-output"}]}
+                }
+
+    url = 'https://fhir.qezkenhd5wep.static-test-account.isccloud.io/Observation'
+    headers = {'accept': 'application/fhir+json', 'Content-Type': 'application/fhir+json', 'x-api-key':'oiCise6rK32rBFcLqLjKs6Tw75Hb3ks82qZYbsb7'}
+
+    print("json data: ", jsonData)
+    x = requests.post(url, json=jsonData, headers=headers)
+    print("response from measuremnte"+x.text)
+    
+    return {}
+
 @app.route("/room/<roomId>")
 def room(roomId):
     return jsonify(
@@ -46,9 +71,10 @@ def chart_data():
     allMeasurements = content.json()
 
     measurementList = []
-    
-    for i in allMeasurements['entry']:
-        measurementList.append({'time':o.Observation(i['resource']).effectiveDateTime.isostring, 'value':o.Observation(i['resource']).valueQuantity.value})
+
+    if(allMeasurements['total'] > 0):
+        for i in allMeasurements['entry']:
+            measurementList.append({'time':o.Observation(i['resource']).effectiveDateTime.isostring, 'value':o.Observation(i['resource']).valueQuantity.value})
 
     response = make_response(json.dumps(measurementList))
     response.content_type = 'application/json'
