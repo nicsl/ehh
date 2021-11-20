@@ -64,8 +64,8 @@
 			$(document).ready(function () {
 				
 				$("#room").selectpicker();
-   
                 $("#patient").selectpicker();
+				var interval;
 				
 				function load_data(type, roomId) {
                     $.ajax({
@@ -121,7 +121,6 @@
 								}
 								
 								lineChart.update();
-								//setInterval(requestData(patientId), 15000);
                         },
                     });
 				}
@@ -132,11 +131,14 @@
                 });
 				
 				$(document).on("change", "#patient", function () {
+					
                     var patientId = $("#patient").val();
 					updatePatientInfo(patientId);
-					setTimeout(() => { 
+					clearInterval(interval);
+					interval = setInterval(() => { 
 						requestData(patientId);
 					}, 1000);
+					console.log(interval);
                 });
 				
 				const config = {
