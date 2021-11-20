@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, render_template, jsonify, request, Response, make_response
 from typing import NamedTuple
 
 from fhirclient import client
@@ -8,19 +8,13 @@ import fhirclient.models.observation as o
 import requests
 import json
 
-import random
-import time
-from datetime import datetime
-
 app = Flask(__name__)
 
-room_1 = [1223, 1431, 1516, 1970, 2177]
+room_1 = [1, 1431, 1516, 1970, 2177]
 room_2 = [2395, 2592, 2871, 3021, 3422]
 
 rooms = [0, 1]
 patients = [room_1, room_2]
-
-random.seed() 
 
 @app.route("/patient/<patientId>")
 def patient(patientId):
@@ -42,25 +36,22 @@ def room(roomId):
         patients = rooms[int(roomId)]
     )
 
-@app.route('/chart-data')
+@app.route('/chart-data',methods=["POST","GET"])
 def chart_data():
-    def generate_random_data(patientId):
-        while True:
-            url = 'https://fhir.qezkenhd5wep.static-test-account.isccloud.io/Observation?code={}&patient=Patient/{}'.format('urn:my-system|urinary-output', patientId)
-            headers = {'accept': 'application/fhir+json', 'x-api-key':'oiCise6rK32rBFcLqLjKs6Tw75Hb3ks82qZYbsb7'}
-            content = requests.get(url, headers=headers)
-            allMeasurements = content.json()
+    patientId = request.form['patientId']
+    url = 'https://fhir.qezkenhd5wep.static-test-account.isccloud.io/Observation?code={}&patient=Patient/{}'.format('urn:my-system|urinary-output', int(patientId))
+    headers = {'accept': 'application/fhir+json', 'x-api-key':'oiCise6rK32rBFcLqLjKs6Tw75Hb3ks82qZYbsb7'}
+    content = requests.get(url, headers=headers)
+    allMeasurements = content.json()
 
-            measurementList = []
+    measurementList = []
     
-            for i in allMeasurements['entry']:
-                measurementList.append({'time':o.Observation(i['resource']).effectiveDateTime.isostring, 'value':o.Observation(i['resource']).valueQuantity.value})
+    for i in allMeasurements['entry']:
+        measurementList.append({'time':o.Observation(i['resource']).effectiveDateTime.isostring, 'value':o.Observation(i['resource']).valueQuantity.value})
 
-            json_data = json.dumps(measurementList)
-            yield f"data:{json_data}\n\n"
-            time.sleep(3)
-
-    return Response(generate_random_data(1), mimetype='text/event-stream')
+    response = make_response(json.dumps(measurementList))
+    response.content_type = 'application/json'
+    return response
 
 @app.route('/')
 def main():
