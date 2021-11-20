@@ -99,7 +99,7 @@
 				
 				function requestData(patientId) {
                     $.ajax({
-                        url: "/chart-data",
+                        url: "/retrieveMeasurements",
                         method: "POST",
                         data: { patientId: patientId },
                         dataType: "json",
@@ -172,14 +172,14 @@
 								display: true,
 								scaleLabel: {
 									display: true,
-									labelString: 'Time'
+									labelString: 'Timestamp'
 								}
 							}],
 							yAxes: [{
 								display: true,
 								scaleLabel: {
 									display: true,
-									labelString: 'Value'
+									labelString: 'Absolute Volume (ml)'
 								}
 							}]
 						}
