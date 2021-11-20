@@ -16,8 +16,9 @@ room_2 = [2395, 2592, 2871, 3021, 3422]
 rooms = [0, 1]
 patients = [room_1, room_2]
 
-@app.route("/patient/<patientId>")
-def patient(patientId):
+@app.route("/patient", methods=["POST"])
+def patient():
+    patientId = request.form['patientId']
     url = 'https://fhir.qezkenhd5wep.static-test-account.isccloud.io/Patient/{}'.format(patientId)
     headers = {'accept': 'application/fhir+json', 'x-api-key':'oiCise6rK32rBFcLqLjKs6Tw75Hb3ks82qZYbsb7'}
     content = requests.get(url, headers=headers)
