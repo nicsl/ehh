@@ -4,10 +4,23 @@
         <title>Urinary Output Measurement Gateway</title>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css" />
+		<style>
+			#patientInfo {
+				width: 400px;
+				border: 2px outset red;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
+			#graph {
+				width: 80%;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
+		</style>
     </head>
     <body>
         <div class="container">
-            <h1 align="center">Urinary Output Measurement Gateway</h1>       
+            <h2 align="center">Urinary Output Measurement Gateway</h2>       
             <div class="row">
                 <div class="col-md-6" >
                     <label>Select Room</label>
@@ -22,8 +35,15 @@
                     <select name="patient" data-live-search="true" id="patient" class="form-control" title="Select Patient"> </select>
                 </div>
             </div>
-			<div class="row" style="margin-top:10px"/>
-			<div class="container">
+			<div class="container" id="patientInfo">
+				<div class="row">
+					<p align="center" style="border-bottom: 2px solid red;"><strong>Patient Data</strong></p>
+					<p id="name" align="left">Name:</p>
+					<p id="dateOfBirth" align="left">Date of Birth:</p>
+					<p id="latestIncrease" align="left">Latest hourly increase:</p>
+				</div>
+			</div>
+			<div class="container" id="graph">
 				<div class="row">
 					<div class="col-12">
 						<div class="card">
@@ -64,6 +84,19 @@
                     });
                 }
 				
+				function updatePatientInfo(patientId) {
+                    $.ajax({
+                        url: "/patient",
+                        method: "POST",
+                        data: { patientId: patientId },
+                        dataType: "json",
+                        success: function (response) {
+							document.getElementById("name").innerHTML = "Name: "+response['name'];
+							document.getElementById("dateOfBirth").innerHTML = "Date of Birth: "+response['birthdate'];
+                        },
+                    });
+                }
+				
 				function requestData(patientId) {
                     $.ajax({
                         url: "/chart-data",
@@ -82,6 +115,10 @@
 								config.data.labels.push(response[i]['time']);
 								config.data.datasets[0].data.push(response[i]['value']);
 								}
+								if(response.length > 1)
+								{
+									document.getElementById("latestIncrease").innerHTML = "Latest Hourly Increase: " + (parseInt(response[response.length-1]['value']) - parseInt(response[response.length-2]['value'])) + "ml";
+								}
 								
 								lineChart.update();
 								//setInterval(requestData(patientId), 15000);
@@ -96,6 +133,7 @@
 				
 				$(document).on("change", "#patient", function () {
                     var patientId = $("#patient").val();
+					updatePatientInfo(patientId);
 					setTimeout(() => { 
 						requestData(patientId);
 					}, 1000);
