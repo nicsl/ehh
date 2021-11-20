@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request, Response, make_response
-from typing import NamedTuple
+from dateutil import parser 
 
 from fhirclient import client
 import fhirclient.models.patient as p
@@ -10,12 +10,18 @@ import json
 
 app = Flask(__name__)
 
+# Testing rooms
+# For future: Each device should be configured via Bluetooth
+# Configuration should provide PatientId on that device and room number
 room_1 = [1, 1431, 1516, 1970, 2177]
 room_2 = [2395, 2592, 2871, 3021, 3294]
 
 rooms = [0, 1]
 patients = [room_1, room_2]
 
+# patient
+# Retrieves via GET the patient data from FHIR, based on ID
+# Return: Simplified JSON data with name, birthdate, gender and patient database ID
 @app.route("/patient", methods=["POST"])
 def patient():
     patientId = request.form['patientId']
@@ -31,10 +37,12 @@ def patient():
         patientId = patientId
     )
 
+# getMeasurement
+# Receives simplified measurement data from a sensor, makes a POST to FHIR Observation
+# Return: Nothing
 @app.route("/measurement", methods=["POST"])
 def getMeasurement():
     data = request.data
-    print("Web server data: ", request.json)
     value = request.json['value']
     timestamp = request.json['time']
     patientId = request.json['patientId']
@@ -50,20 +58,14 @@ def getMeasurement():
     url = 'https://fhir.qezkenhd5wep.static-test-account.isccloud.io/Observation'
     headers = {'accept': 'application/fhir+json', 'Content-Type': 'application/fhir+json', 'x-api-key':'oiCise6rK32rBFcLqLjKs6Tw75Hb3ks82qZYbsb7'}
 
-    print("json data: ", jsonData)
-    x = requests.post(url, json=jsonData, headers=headers)
-    print("response from measuremnte"+x.text)
-    
+    requests.post(url, json=jsonData, headers=headers)
     return {}
 
-@app.route("/room/<roomId>")
-def room(roomId):
-    return jsonify(
-        patients = rooms[int(roomId)]
-    )
-
-@app.route('/chart-data',methods=["POST","GET"])
-def chart_data():
+# retrieveMeasurements
+# Retrieve all the urinary output measurements from a patient
+# Return: JSON data with all the measurements (Timestamp and Value)
+@app.route('/retrieveMeasurements',methods=["POST","GET"])
+def retrieveMeasurements():
     patientId = request.form['patientId']
     url = 'https://fhir.qezkenhd5wep.static-test-account.isccloud.io/Observation?code={}&patient=Patient/{}'.format('urn:my-system|urinary-output', int(patientId))
     headers = {'accept': 'application/fhir+json', 'x-api-key':'oiCise6rK32rBFcLqLjKs6Tw75Hb3ks82qZYbsb7'}
@@ -74,16 +76,16 @@ def chart_data():
 
     if(allMeasurements['total'] > 0):
         for i in allMeasurements['entry']:
-            measurementList.append({'time':o.Observation(i['resource']).effectiveDateTime.isostring, 'value':o.Observation(i['resource']).valueQuantity.value})
+            datetime = parser.parse(o.Observation(i['resource']).effectiveDateTime.isostring) 
+            measurementList.append({'time': str(datetime.time()), 'value':o.Observation(i['resource']).valueQuantity.value})
 
     response = make_response(json.dumps(measurementList))
     response.content_type = 'application/json'
     return response
 
-@app.route('/')
-def main():
-    return render_template('index.html', rooms=rooms)
- 
+# patientsInRoom
+# Gets the IDs of all the patients in a room
+# Return: JSON data with all the patients in that room
 @app.route("/patientsInRoom",methods=["POST","GET"])
 def patientsInRoom():  
     if request.method == 'POST':
@@ -97,9 +99,9 @@ def patientsInRoom():
             output.append(pObj)
     return jsonify(output)
 
-@app.route('/graph')
-def index():
-    return render_template('graph.html')
+@app.route('/')
+def main():
+    return render_template('index.html', rooms=rooms)
 
 if __name__ == "__main__":
-    app.run(threaded = True)
+    app.run(host='127.0.0.1')
