@@ -25,7 +25,7 @@
             <div class="row">
                 <div class="col-md-6" >
                     <label>Select Room</label>
-                    <select name="room" data-live-search="true" id="room" class="form-control" title="Select Room"> 
+                    <select name="room" data-live-search="false" id="room" class="form-control" title="Select Room"> 
                     {% for room in rooms %}
                     <option value="{{room}}">{{room}}</option>
                     {% endfor %}
@@ -33,7 +33,7 @@
                 </div>
                 <div class="col-md-6">
                     <label>Select Patient</label>
-                    <select name="patient" data-live-search="true" id="patient" class="form-control" title="Select Patient"> </select>
+                    <select name="patient" data-live-search="false" id="patient" class="form-control" title="Select Patient"> </select>
                 </div>
             </div>
 			<div class="container" id="patientInfo">
@@ -120,6 +120,10 @@
 								{
 									document.getElementById("latestIncrease").innerHTML = "Latest Hourly Increase: " + (parseInt(response[response.length-1]['value']) - parseInt(response[response.length-2]['value'])) + "ml";
 								}
+								else
+								{
+									document.getElementById("latestIncrease").innerHTML = "Latest Hourly Increase: "
+								}
 								
 								lineChart.update();
                         },
@@ -139,7 +143,7 @@
 					requestData(patientId);
 					interval = setInterval(() => { 
 						requestData(patientId);
-					}, 10000);
+					}, 4000);
 					console.log(interval);
                 });
 				
